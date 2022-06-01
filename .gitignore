@@ -1,0 +1,11 @@
+# Lock files
+*.hcl
+*.info
+
+# Directories
+.terraform/
+
+# Keys
+*.pem
+*.ppk
+*.pub
