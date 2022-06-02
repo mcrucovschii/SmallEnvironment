@@ -1,8 +1,12 @@
 #-----------------------------------------------
-# Apache Web Server
+# Example of a small environment
 #
-# Build WebServer at bootstrap_action
-# define and output data
+# 2 LBs (Custom Hardened Linux AMI)
+# 2 Application-Server (default AWS AMI)
+# 3 DB-Nodes (default AWS AMI)
+# 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
+#
+# output.tf
 #----------------------------------------------
 
 output "webserver_instance_id" {

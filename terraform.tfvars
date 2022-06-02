@@ -1,10 +1,15 @@
 #-----------------------------------------------
-# Apache Web Server
-# Build by Terraform
-# terraform.tfvars  default values of variables
+# Example of a small environment
+#
+# 2 LBs (Custom Hardened Linux AMI)
+# 2 Application-Server (default AWS AMI)
+# 3 DB-Nodes (default AWS AMI)
+# 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
+#
+# terraform.tfvars
 #----------------------------------------------
 
 region        = "us-west-2"
 instance_type = "t2.micro"
 allowed_ports = ["22", "80", "8080", "443"]
-key_max_name  = "MaxKeyPair"
+key_name      = "MaxKeyPair"
