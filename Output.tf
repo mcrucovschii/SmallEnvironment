@@ -8,14 +8,14 @@
 #
 # output.tf
 #----------------------------------------------
-
+/*
 output "webserver_instance_id" {
   value = aws_instance.WebServer.id
 }
 output "webserver_public_dns" {
   value = aws_instance.WebServer.public_dns
 }
-
+*/
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 data "aws_availability_zones" "available" {}

@@ -9,86 +9,43 @@
 # SmallEnvironment.tf
 #----------------------------------------------
 
-
-resource "aws_default_vpc" "default" {}
-resource "aws_vpc" "VPC-LB" {
-  cidr_block           = "10.1.0.0/16"
-  enable_dns_hostnames = true
+resource "aws_instance" "web_node" {
+  count                  = var.app_servers_count
+  instance_type          = var.instance_type
+  ami                    = data.aws_ami.fresh_amazon_linux.id
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.lb_sg.id]
+  subnet_id              = aws_subnet.PublicSubnetLB.id # aws_subnet.tf_test_subnet.id
+  user_data              = file("tf-app-server-script.sh")
   tags = {
-    Name = "VPC-LB"
-  }
-}
-resource "aws_vpc" "VPC-AppServers" {
-  cidr_block           = "10.2.0.0/16"
-  enable_dns_hostnames = true
-  tags = {
-    Name = "VPC-AppServers"
-  }
-}
-resource "aws_vpc" "VPC-DBNodes" {
-  cidr_block           = "10.3.0.0/16"
-  enable_dns_hostnames = true
-  tags = {
-    Name = "VPC-DBNodes"
+    Name = "web_node_${count.index}"
   }
 }
 
-resource "aws_subnet" "PublicSubnetLB" {
-  vpc_id            = aws_vpc.VPC-LB.id
-  availability_zone = data.aws_availability_zones.available.names[0]
-  cidr_block        = cidrsubnet(aws_vpc.VPC-LB.cidr_block, 4, 1)
-  tags = {
-    Name = "PublicSubnetLB"
+data "template_file" "hapee-userdata" {
+  template = file("hapee-userdata.sh.tpl")
+  vars = {
+    serverlist = join("\n", formatlist("    server app-%v %v:80 cookie app-%v check", aws_instance.web_node.*.id, aws_instance.web_node.*.private_ip, aws_instance.web_node.*.id))
   }
 }
-resource "aws_subnet" "PrivateSubnetAppServers" {
-  vpc_id            = aws_vpc.VPC-AppServers.id
-  availability_zone = data.aws_availability_zones.available.names[0]
-  cidr_block        = cidrsubnet(aws_vpc.VPC-AppServers.cidr_block, 4, 1)
+resource "aws_instance" "hapee_node" {
+  count                  = var.hapee_lb_count
+  instance_type          = var.instance_type
+  ami                    = data.aws_ami.fresh_amazon_linux.id
+  key_name               = var.key_name
+  vpc_security_group_ids = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
+  subnet_id              = aws_subnet.PublicSubnetLB.id # aws_subnet.tf_test_subnet.id
+  user_data              = data.template_file.hapee-userdata.rendered
   tags = {
-    Name = "PrivateSubnetAppServers"
-  }
-}
-resource "aws_subnet" "PrivateSubnetDBNodes" {
-  vpc_id            = aws_vpc.VPC-DBNodes.id
-  availability_zone = data.aws_availability_zones.available.names[0]
-  cidr_block        = cidrsubnet(aws_vpc.VPC-DBNodes.cidr_block, 4, 1)
-  tags = {
-    Name = "PrivateSubnetDBNodes"
+    Name = "hapee_node_${count.index}"
   }
 }
 
-
-resource "aws_security_group" "LB_SG" {
-  name   = "Load Balancer Security Group"
-  vpc_id = aws_vpc.VPC-LB.id
-  dynamic "ingress" {
-    for_each = var.allowed_ports
-    content {
-      from_port        = ingress.value
-      to_port          = ingress.value
-      protocol         = "tcp"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
-
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-  tags = {
-    Name = "LB_SG"
-  }
-}
-
+/*
 resource "aws_instance" "WebServer" {
   ami                         = data.aws_ami.fresh_amazon_linux.id # Amazon Linux 2 Kernel 5.10 AMI 2.0.20220426.0 x86_64 HVM gp2
   instance_type               = var.instance_type
-  vpc_security_group_ids      = [aws_security_group.LB_SG.id]
+  vpc_security_group_ids      = [aws_security_group.lb_sg.id]
   availability_zone           = data.aws_availability_zones.available.names[0]
   key_name                    = var.key_name
   subnet_id                   = aws_subnet.PublicSubnetLB.id
@@ -98,3 +55,4 @@ resource "aws_instance" "WebServer" {
     Name = "Web Server Apache"
   }
 }
+*/

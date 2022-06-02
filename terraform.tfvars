@@ -9,7 +9,10 @@
 # terraform.tfvars
 #----------------------------------------------
 
-region        = "us-west-2"
-instance_type = "t2.micro"
-allowed_ports = ["22", "80", "8080", "443"]
-key_name      = "MaxKeyPair"
+region            = "us-west-2"
+instance_type     = "t2.micro"
+allowed_ports     = ["22", "80", "8080", "443"]
+key_name          = "MaxKeyPair"
+app_servers_count = 2
+hapee_lb_count    = 2
+aws_az_count      = 1
