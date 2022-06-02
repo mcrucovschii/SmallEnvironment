@@ -9,30 +9,32 @@
 # SmallEnvironment.tf
 #----------------------------------------------
 
+########### VPCs declaration ###################
 resource "aws_default_vpc" "default" {}
 
 resource "aws_vpc" "VPC-LB" {
-  cidr_block           = "10.1.0.0/16"
+  cidr_block           = "20.1.0.0/16"
   enable_dns_hostnames = true
   tags = {
     Name = "VPC-LB"
   }
 }
 resource "aws_vpc" "VPC-AppServers" {
-  cidr_block           = "10.2.0.0/16"
+  cidr_block           = "20.2.0.0/16"
   enable_dns_hostnames = true
   tags = {
     Name = "VPC-AppServers"
   }
 }
 resource "aws_vpc" "VPC-DBNodes" {
-  cidr_block           = "10.3.0.0/16"
+  cidr_block           = "20.3.0.0/16"
   enable_dns_hostnames = true
   tags = {
     Name = "VPC-DBNodes"
   }
 }
 
+################## subnet declaration #################
 resource "aws_subnet" "PublicSubnetLB" {
   vpc_id            = aws_vpc.VPC-LB.id
   availability_zone = data.aws_availability_zones.available.names[0]
@@ -57,6 +59,22 @@ resource "aws_subnet" "PrivateSubnetDBNodes" {
     Name = "PrivateSubnetDBNodes"
   }
 }
+resource "aws_subnet" "tf_test_subnet" {
+  count                   = var.aws_az_count
+  vpc_id                  = aws_vpc.VPC-LB.id
+  cidr_block              = cidrsubnet(aws_vpc.VPC-LB.cidr_block, 8, count.index)
+  availability_zone       = data.aws_availability_zones.all.names[count.index]
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "hapee_test_subnet"
+  }
+}
+resource "aws_route_table_association" "a" {
+  count          = var.aws_az_count
+  subnet_id      = element(aws_subnet.tf_test_subnet.*.id, count.index)
+  route_table_id = aws_route_table.r.id
+}
+
 
 ############# Security groups #############################
 # aws_security_group.lb_sg  Load balancers (hapee and ALB)
@@ -111,19 +129,37 @@ resource "aws_security_group" "instance_sg2" {
   description = "Instance (HAProxy/App node) SG to pass LB traffic  by default"
   vpc_id      = aws_vpc.VPC-LB.id # aws_vpc.VPC-AppServers.id
   ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.lb_sg.id}"]
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    #security_groups = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.lb_sg.id}"]
   }
   ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.lb_sg.id}"]
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    #security_groups = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.lb_sg.id}"]
   }
 }
-
+resource "aws_security_group" "elb" {
+  name        = "elb_sg"
+  description = "Used in the terraform"
+  vpc_id      = aws_vpc.VPC-LB.id
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 ##################### gateway declaration ###############
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.VPC-LB.id
@@ -136,19 +172,25 @@ resource "aws_route_table" "r" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gw.id
   }
+  tags = {
+    Name = "VPC-LB-GW"
+  }
 }
-
+/*
 resource "aws_route_table_association" "a" {
   subnet_id      = aws_subnet.PublicSubnetLB.id
   route_table_id = aws_route_table.r.id
-}
+}*/
 
 ############## ALB ##############################
 resource "aws_lb" "hapee_alb" {
-  name            = "hapee-test-alb"
-  internal        = false
-  subnets         = ["${aws_subnet.PublicSubnetLB.id}"]
-  security_groups = ["${aws_security_group.lb_sg.id}"]
+  name     = "hapee-test-alb"
+  internal = false
+  subnets  = toset(aws_subnet.tf_test_subnet[*].id)
+  #[for i in aws_subnet.tf_test_subnet : aws_subnet.tf_test_subnet[i].id]
+  # ["${aws_subnet.tf_test_subnet.*.id}"] # [for i in var.allowed_ips : i.ip_address]
+  # toset(var.allowed_ips[*].ip_address)
+  security_groups = ["${aws_security_group.elb.id}"]
   tags = {
     Name = "hapee_alb"
   }

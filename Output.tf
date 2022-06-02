@@ -19,6 +19,7 @@ output "webserver_public_dns" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "all" {}
 
 data "aws_vpcs" "foo" {}
 data "aws_vpc" "foo" {
@@ -59,7 +60,22 @@ output "aws_default_vpc_id" {
   value = aws_default_vpc.default.id
 }
 
-/*
-output "vpc_selected" {
-  value = data.aws_vpc.selected.id
-}*/
+output "HAPEE_nodes_private_IPs" {
+  value = aws_instance.hapee_node.*.private_ip
+}
+
+output "HAPEE_node_public_IPs" {
+  value = aws_instance.hapee_node.*.public_ip
+}
+
+output "Web_node_private_IPs" {
+  value = aws_instance.web_node.*.private_ip
+}
+
+output "Web_node_public_IPs" {
+  value = aws_instance.web_node.*.public_ip
+}
+
+output "LB_DNS_address" {
+  value = aws_lb.hapee_alb.dns_name
+}
