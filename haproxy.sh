@@ -16,7 +16,7 @@ sudo mkdir -p /etc/haproxy
 sudo mkdir -p /var/lib/haproxy
 sudo touch /var/lib/haproxy/stats
 sudo ln -s /usr/local/sbin/haproxy /usr/sbin/haproxy
-sudo cp /root/haproxy-2.6.0/examples/haproxy.init /etc/init.d/haproxy
+sudo wget https://raw.githubusercontent.com/mcrucovschii/SmallEnvironment/Development/haproxy.init -O /etc/init.d/haproxy
 sudo chmod 755 /etc/init.d/haproxy
 sudo useradd -r haproxy
 sudo groupadd haproxy

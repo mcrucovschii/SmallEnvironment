@@ -34,7 +34,7 @@ data "template_file" "hapee-userdata" {
 resource "aws_instance" "hapee_node" {
   count                       = var.hapee_lb_count
   instance_type               = var.instance_type
-  ami                         = data.aws_ami.fresh_amazon_linux.id # "ami-2c489c54"
+  ami                         = data.aws_ami.fresh_amazon_linux.id
   associate_public_ip_address = true
   key_name                    = var.key_name
   vpc_security_group_ids      = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
