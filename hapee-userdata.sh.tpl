@@ -1,6 +1,6 @@
 #!/bin/bash
 sudo echo "start" > /tmp/max-user-data.log
-sudo wget https://raw.githubusercontent.com/mcrucovschii/WebServerTF/Development/hapee-userdata.sh.tpl -O /root/haproxy.sh
+sudo wget https://raw.githubusercontent.com/mcrucovschii/SmallEnvironment/Development/haproxy.sh -O /root/haproxy.sh
 sudo cd /root/
 sudo bash /root/haproxy.sh
 sudo tee /etc/haproxy/haproxy.cfg <<EOF
