@@ -16,13 +16,11 @@ sudo mkdir -p /etc/haproxy
 sudo mkdir -p /var/lib/haproxy
 sudo touch /var/lib/haproxy/stats
 sudo ln -s /usr/local/sbin/haproxy /usr/sbin/haproxy
-sudo wget https://raw.githubusercontent.com/mcrucovschii/SmallEnvironment/Development/haproxy.init -O /etc/init.d/haproxy
-sudo chmod 755 /etc/init.d/haproxy
+sudo wget https://raw.githubusercontent.com/mcrucovschii/SmallEnvironment/Development/haproxy.init -O /etc/init.d/haproxy.init
+sudo chmod 755 /etc/init.d/haproxy.init
 sudo useradd -r haproxy
 sudo groupadd haproxy
 sudo systemctl daemon-reload
 sudo chkconfig haproxy on
 sudo iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-sudo chmod 644 /etc/haproxy/haproxy.cfg
-sudo systemctl restart haproxy
 sudo echo "end" >> /tmp/hapee-user-data.log
