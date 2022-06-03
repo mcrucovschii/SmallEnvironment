@@ -17,8 +17,8 @@ resource "aws_instance" "web_node" {
   key_name                    = var.key_name
   vpc_security_group_ids      = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
   subnet_id                   = element(aws_subnet.tf_test_subnet.*.id, count.index)
-  #vpc_security_group_ids      = [aws_security_group.lb_sg.id]
-  #subnet_id = aws_subnet.PublicSubnetLB.id # aws_subnet.tf_test_subnet.id
+  #vpc_security_group_ids = [aws_security_group.lb_sg.id]
+  #subnet_id              = aws_subnet.PublicSubnetLB.id
   user_data = file("tf-app-server-script.sh")
   tags = {
     Name = "web_node_${count.index}"
@@ -38,25 +38,9 @@ resource "aws_instance" "hapee_node" {
   associate_public_ip_address = true
   key_name                    = var.key_name
   vpc_security_group_ids      = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
-  subnet_id                   = aws_subnet.tf_test_subnet[count.index].id # aws_subnet.PublicSubnetLB.id
+  subnet_id                   = aws_subnet.tf_test_subnet[count.index].id
   user_data                   = data.template_file.hapee-userdata.rendered
   tags = {
     Name = "hapee_node_${count.index}"
   }
 }
-
-/*
-resource "aws_instance" "WebServer" {
-  ami                         = data.aws_ami.fresh_amazon_linux.id # Amazon Linux 2 Kernel 5.10 AMI 2.0.20220426.0 x86_64 HVM gp2
-  instance_type               = var.instance_type
-  vpc_security_group_ids      = [aws_security_group.lb_sg.id]
-  availability_zone           = data.aws_availability_zones.available.names[0]
-  key_name                    = var.key_name
-  subnet_id                   = aws_subnet.PublicSubnetLB.id
-  associate_public_ip_address = true
-  user_data                   = file("tf-app-server-script.sh")
-  tags = {
-    Name = "Web Server Apache"
-  }
-}
-*/

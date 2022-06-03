@@ -33,7 +33,35 @@ resource "aws_vpc" "VPC-DBNodes" {
     Name = "VPC-DBNodes"
   }
 }
-
+################# VPC Peering #########################
+resource "aws_vpc_peering_connection" "VPC1-2" {
+  peer_vpc_id = aws_vpc.VPC-AppServers.id
+  vpc_id      = aws_vpc.VPC-LB.id
+  auto_accept = true
+  accepter {
+    allow_remote_vpc_dns_resolution = true
+  }
+  requester {
+    allow_remote_vpc_dns_resolution = true
+  }
+  tags = {
+    Name = "VPC Peering between Load Balancers and Web nodes"
+  }
+}
+resource "aws_vpc_peering_connection" "VPC2-3" {
+  peer_vpc_id = aws_vpc.VPC-AppServers.id
+  vpc_id      = aws_vpc.VPC-DBNodes.id
+  auto_accept = true
+  accepter {
+    allow_remote_vpc_dns_resolution = true
+  }
+  requester {
+    allow_remote_vpc_dns_resolution = true
+  }
+  tags = {
+    Name = "VPC Peering between Web nodes and DB nodes"
+  }
+}
 ################## subnet declaration #################
 resource "aws_subnet" "PublicSubnetLB" {
   vpc_id            = aws_vpc.VPC-LB.id
@@ -69,12 +97,6 @@ resource "aws_subnet" "tf_test_subnet" {
     Name = "hapee_test_subnet"
   }
 }
-resource "aws_route_table_association" "a" {
-  count          = var.aws_az_count
-  subnet_id      = element(aws_subnet.tf_test_subnet.*.id, count.index)
-  route_table_id = aws_route_table.r.id
-}
-
 
 ############# Security groups #############################
 # aws_security_group.lb_sg  Load balancers (hapee and ALB)
@@ -85,20 +107,17 @@ resource "aws_security_group" "lb_sg" {
   dynamic "ingress" {
     for_each = var.lb_allowed_ports
     content {
-      from_port        = ingress.value
-      to_port          = ingress.value
-      protocol         = "tcp"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
     }
   }
-
   egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
     Name = "LB_SG"
@@ -133,20 +152,17 @@ resource "aws_security_group" "instance_sg2" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    #security_groups = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.lb_sg.id}"]
   }
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    #security_groups = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.lb_sg.id}"]
   }
 }
 resource "aws_security_group" "elb" {
-  name        = "elb_sg"
-  description = "Used in the terraform"
-  vpc_id      = aws_vpc.VPC-LB.id
+  name   = "elb_sg"
+  vpc_id = aws_vpc.VPC-LB.id
   ingress {
     from_port   = 80
     to_port     = 80
@@ -165,7 +181,7 @@ resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.VPC-LB.id
 }
 
-##################### route table declaration ###############
+##################### route table declaration ############
 resource "aws_route_table" "r" {
   vpc_id = aws_vpc.VPC-LB.id
   route {
@@ -175,6 +191,11 @@ resource "aws_route_table" "r" {
   tags = {
     Name = "VPC-LB-GW"
   }
+}
+resource "aws_route_table_association" "a" {
+  count          = var.aws_az_count
+  subnet_id      = element(aws_subnet.tf_test_subnet.*.id, count.index)
+  route_table_id = aws_route_table.r.id
 }
 /*
 resource "aws_route_table_association" "a" {

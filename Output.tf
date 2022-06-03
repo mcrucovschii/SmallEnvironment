@@ -20,6 +20,10 @@ output "foo_ids" {
 }
 output "aws_default_vpc_id" {
   value = aws_default_vpc.default.id
+
+  output "latest_amazon_linux_id" {
+    value = data.aws_ami.fresh_amazon_linux.id
+  }
 }
 */
 data "aws_caller_identity" "current" {}
@@ -51,11 +55,7 @@ output "data_aws_regions_name" {
 }
 
 output "aws_availability_zones" {
-  value = data.aws_availability_zones.available.names[0]
-}
-
-output "latest_amazon_linux_id" {
-  value = data.aws_ami.fresh_amazon_linux.id
+  value = data.aws_availability_zones.available.names
 }
 
 output "HAPEE_nodes_private_IPs" {
