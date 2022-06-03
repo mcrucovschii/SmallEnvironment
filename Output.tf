@@ -15,6 +15,12 @@ output "webserver_instance_id" {
 output "webserver_public_dns" {
   value = aws_instance.WebServer.public_dns
 }
+output "foo_ids" {
+  value = data.aws_vpcs.foo.ids
+}
+output "aws_default_vpc_id" {
+  value = aws_default_vpc.default.id
+}
 */
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
@@ -50,14 +56,6 @@ output "aws_availability_zones" {
 
 output "latest_amazon_linux_id" {
   value = data.aws_ami.fresh_amazon_linux.id
-}
-
-output "foo_ids" {
-  value = data.aws_vpcs.foo.ids
-}
-
-output "aws_default_vpc_id" {
-  value = aws_default_vpc.default.id
 }
 
 output "HAPEE_nodes_private_IPs" {
