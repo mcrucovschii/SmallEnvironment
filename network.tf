@@ -64,9 +64,12 @@ resource "aws_vpc_peering_connection" "VPC2-3" {
 }
 ################## subnet declaration #################
 resource "aws_subnet" "PublicSubnetLB" {
+  #count             = var.aws_az_count
   vpc_id            = aws_vpc.VPC-LB.id
-  availability_zone = data.aws_availability_zones.available.names[0]
   cidr_block        = cidrsubnet(aws_vpc.VPC-LB.cidr_block, 4, 1)
+  availability_zone = data.aws_availability_zones.available.names[0]
+  #availability_zone       = data.aws_availability_zones.available.names[count.index]
+  #map_public_ip_on_launch = true
   tags = {
     Name = "PublicSubnetLB"
   }

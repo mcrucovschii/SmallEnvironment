@@ -21,13 +21,17 @@ variable "key_name" {
   default = "MaxKeyPair"
 }
 
+variable "hapee_lb_count" {
+  description = "Please, enter the number of LB servers"
+  default     = 2
+}
 variable "app_servers_count" {
   description = "Please, enter the number of app servers"
   default     = 2
 }
-variable "hapee_lb_count" {
-  description = "Please, enter the number of LB servers"
-  default     = 2
+variable "db_nodes_count" {
+  description = "Please, enter the number of db nodes"
+  default     = 1
 }
 variable "aws_az_count" {
   description = "Please, enter the number of AZ for deployment"
