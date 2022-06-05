@@ -13,15 +13,12 @@
 #
 # SmallEnvironment.tf
 #----------------------------------------------
-
+#########   instances  - db, app, hapee #######
 resource "aws_instance" "db_node" {
-  count         = var.db_nodes_count
-  instance_type = var.instance_type
-  ami           = data.aws_ami.fresh_amazon_linux.id
-  # associate_public_ip_address = true
-  key_name = var.key_name
-  #vpc_security_group_ids = [aws_security_group.dbnode_sg.id]
-  #subnet_id              = aws_subnet.PrivateSubnetDBNodes.id
+  count                  = var.db_nodes_count
+  instance_type          = var.instance_type
+  ami                    = data.aws_ami.fresh_amazon_linux.id
+  key_name               = var.key_name
   vpc_security_group_ids = ["${aws_security_group.dbnode_sg.id}"]
   subnet_id              = element(aws_subnet.PrivateSubnetDBNodes.*.id, count.index)
   user_data              = file("tf-db-node-script.sh")
@@ -44,9 +41,7 @@ resource "aws_instance" "web_node" {
   key_name                    = var.key_name
   vpc_security_group_ids      = ["${aws_security_group.app_sg.id}"]
   subnet_id                   = element(aws_subnet.PrivateSubnetAppServers.*.id, count.index)
-  #vpc_security_group_ids      = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
-  #subnet_id                   = element(aws_subnet.tf_test_subnet.*.id, count.index)
-  user_data = data.template_file.db-userdata.rendered
+  user_data                   = data.template_file.db-userdata.rendered
   tags = {
     Name = "web_node_${count.index}"
   }
@@ -65,11 +60,9 @@ resource "aws_instance" "hapee_node" {
   ami                         = data.aws_ami.fresh_amazon_linux.id
   associate_public_ip_address = true
   key_name                    = var.key_name
-  vpc_security_group_ids      = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
+  vpc_security_group_ids      = ["${aws_security_group.lb_sg.id}"]
   subnet_id                   = aws_subnet.tf_test_subnet[count.index].id
-  #vpc_security_group_ids = [aws_security_group.lb_sg.id]
-  #subnet_id              = aws_subnet.PublicSubnetLB[count.index].id
-  user_data = data.template_file.hapee-userdata.rendered
+  user_data                   = data.template_file.hapee-userdata.rendered
   tags = {
     Name = "hapee_node_${count.index}"
   }

@@ -20,21 +20,3 @@ wget https://raw.githubusercontent.com/mcrucovschii/SmallEnvironment/Development
 chown apache:apache /var/www/html/wordpress/.htaccess
 myip=`curl http://169.254.169.254/latest/meta-data/local-ipv4`
 echo "<h2>WebServer with ip: $myip </h2><br>Small Environment build by Terraform" > /var/www/html/index.html
-
-#myip=`curl http://169.254.169.254/latest/meta-data/local-ipv4`
-#echo "<h2>WebServer with ip: $myip </h2><br>Small Environment build by Terraform" > /var/www/html/index.html
-#sudo service httpd start
-#sudo chkconfig httpd on
-
-#!/bin/bash
-#yum update -y
-#amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
-#yum install -y httpd mariadb-server
-#systemctl start httpd
-#systemctl enable httpd
-#usermod -a -G apache ec2-user
-#chown -R ec2-user:apache /var/www
-#chmod 2775 /var/www
-#find /var/www -type d -exec chmod 2775 {} \;
-#find /var/www -type f -exec chmod 0664 {} \;
-#echo "<?php phpinfo(); ?>" > /var/www/html/phpinfo.php

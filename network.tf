@@ -48,6 +48,18 @@ resource "aws_vpc_peering_connection" "VPC1-2" {
     Name = "VPC Peering between Load Balancers and Web nodes"
   }
 }
+/*
+resource "aws_vpc_peering_connection_options" "foo" {
+  vpc_peering_connection_id = aws_vpc_peering_connection.VPC1-2.id
+  accepter {
+    allow_remote_vpc_dns_resolution = true
+  }
+
+  requester {
+    allow_vpc_to_remote_classic_link = true
+    allow_classic_link_to_remote_vpc = true
+  }
+}*/
 resource "aws_vpc_peering_connection" "VPC2-3" {
   peer_vpc_id = aws_vpc.VPC-AppServers.id
   vpc_id      = aws_vpc.VPC-DBNodes.id
@@ -89,9 +101,6 @@ resource "aws_subnet" "PublicSubnetLB" {
   }
 }
 resource "aws_subnet" "PrivateSubnetAppServers" {
-  #vpc_id            = aws_vpc.VPC-AppServers.id
-  #availability_zone = data.aws_availability_zones.available.names[0]
-  #cidr_block        = cidrsubnet(aws_vpc.VPC-AppServers.cidr_block, 4, 1)
   count                   = var.aws_az_count
   vpc_id                  = aws_vpc.VPC-AppServers.id
   cidr_block              = cidrsubnet(aws_vpc.VPC-AppServers.cidr_block, 8, count.index)
@@ -138,13 +147,6 @@ resource "aws_security_group" "app_sg" {
   ingress {
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    self        = true
-  }
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
     self        = true
@@ -206,7 +208,7 @@ resource "aws_security_group" "lb_sg" {
     Name = "LB_SG"
   }
 }
-
+/*
 resource "aws_security_group" "instance_sg1" {
   name        = "instance_sg1"
   description = "Instance (HAProxy/App node) SG to pass tcp/22 by default"
@@ -249,13 +251,19 @@ resource "aws_security_group" "instance_sg2" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
+}*/
 resource "aws_security_group" "elb" {
   name   = "elb_sg"
   vpc_id = aws_vpc.VPC-LB.id
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -366,52 +374,6 @@ resource "aws_lb_target_group_attachment" "hapee_alb_target_att" {
   target_group_arn = aws_lb_target_group.hapee_alb_target.arn
   target_id        = element(aws_instance.hapee_node.*.id, count.index)
   port             = 80
-}
-############## ALB RDS ##############################
-/*
-resource "aws_lb" "db_alb" {
-  name            = "db-test-alb"
-  internal        = false
-  subnets         = toset(aws_subnet.tf_test_subnet[*].id)
-  security_groups = ["${aws_security_group.elb.id}"]
-  tags = {
-    Name = "db_alb"
-  }
-}
-resource "aws_lb_target_group" "db_alb_target" {
-  name     = "db-test-alb-tg"
-  vpc_id   = aws_vpc.VPC-LB.id
-  port     = 3306
-  protocol = "TCP"
-  health_check {
-    interval = 30
-    #path                = "/haproxy_status"
-    port     = 3306
-    protocol = "TCP"
-    #timeout             = 5
-    healthy_threshold   = 3
-    unhealthy_threshold = 3
-    #matcher             = "200,202"
-  }
-  tags = {
-    Name = "hapee_alb_tg"
-  }
-}
-/*
-resource "aws_lb_listener" "db_alb_listener" {
-  load_balancer_arn = aws_lb.db_alb.arn
-  port              = 80
-  protocol          = "HTTP"
-  default_action {
-    target_group_arn = aws_lb_target_group.db_alb_target.arn
-    type             = "forward"
-  }
-}
-resource "aws_lb_target_group_attachment" "db_alb_target_att" {
-  count            = var.db_nodes_count
-  target_group_arn = aws_lb_target_group.db_alb_target.arn
-  target_id        = element(aws_instance.db_node.*.id, count.index)
-  port             = 3306
 }
 ######################### DNS ###############################
 /*
