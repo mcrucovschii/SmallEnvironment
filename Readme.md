@@ -16,7 +16,7 @@ terraform init
 #db_nodes_count    = 3
 #aws_az_count      = 2
 
-# Deploy!
+# Deploy
 terraform apply --auto-approve
 
 # Destroy
