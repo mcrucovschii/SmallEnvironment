@@ -73,7 +73,7 @@ resource "aws_vpc_peering_connection" "VPC1-3" {
     allow_remote_vpc_dns_resolution = true
   }
   tags = {
-    Name = "VPC Peering between Web nodes and DB nodes"
+    Name = "VPC Peering between LB and DB nodes"
   }
 }
 ################## subnet declaration #################
@@ -97,9 +97,10 @@ resource "aws_subnet" "PrivateSubnetAppServers" {
   }
 }
 resource "aws_subnet" "PrivateSubnetDBNodes" {
+  count                   = var.aws_az_count
   vpc_id                  = aws_vpc.VPC-DBNodes.id
-  availability_zone       = data.aws_availability_zones.all.names[0]
-  cidr_block              = cidrsubnet(aws_vpc.VPC-DBNodes.cidr_block, 4, 1)
+  cidr_block              = cidrsubnet(aws_vpc.VPC-DBNodes.cidr_block, 8, count.index)
+  availability_zone       = data.aws_availability_zones.all.names[count.index]
   map_public_ip_on_launch = true
   tags = {
     Name = "PrivateSubnetDBNodes"
@@ -263,7 +264,9 @@ resource "aws_route_table" "r3" {
   }
 }
 resource "aws_route_table_association" "a3" {
-  subnet_id      = aws_subnet.PrivateSubnetDBNodes.id
+  count     = var.aws_az_count
+  subnet_id = element(aws_subnet.PrivateSubnetDBNodes.*.id, count.index)
+  #subnet_id      = aws_subnet.PrivateSubnetDBNodes.id
   route_table_id = aws_route_table.r3.id
 }
 

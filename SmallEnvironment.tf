@@ -5,6 +5,7 @@
 # 2 Application-Server (default AWS AMI)
 # 3 DB-Nodes (default AWS AMI)
 # 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
+#
 # How can this be put into a GitHub Action Pipeline to get applied when merged?
 # Is there any other way to maybe integrate it into our AWX(Ansible Tower) infrastructure to Reflect a IaaC Approach?
 # What could be the best way to distribute Traffic over 2 LBs or would you prefer Active/Passive? How can this be done without any interaction?
@@ -19,10 +20,10 @@ resource "aws_instance" "db_node" {
   ami           = data.aws_ami.fresh_amazon_linux.id
   # associate_public_ip_address = true
   key_name = var.key_name
-  #vpc_security_group_ids = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
-  #subnet_id              = element(aws_subnet.tf_test_subnet.*.id, count.index)
-  vpc_security_group_ids = [aws_security_group.dbnode_sg.id]
-  subnet_id              = aws_subnet.PrivateSubnetDBNodes.id
+  #vpc_security_group_ids = [aws_security_group.dbnode_sg.id]
+  #subnet_id              = aws_subnet.PrivateSubnetDBNodes.id
+  vpc_security_group_ids = ["${aws_security_group.dbnode_sg.id}"]
+  subnet_id              = element(aws_subnet.PrivateSubnetDBNodes.*.id, count.index)
   user_data              = file("tf-db-node-script.sh")
   tags = {
     Name = "db_node_${count.index}"
