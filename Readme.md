@@ -7,7 +7,7 @@ export AWS_SECRET_ACCESS_KEY=""
 # Init
 terraform init
 
-#Configure terraform.tfvars
+#Configure in terraform.tfvars
 #region            = "us-west-2"
 #instance_type     = "t2.micro"
 #key_name          = "YourKeyPair"
@@ -20,6 +20,6 @@ terraform init
 terraform apply --auto-approve
 
 # Destroy
-terraform destroy  --auto-approve
+terraform destroy --auto-approve
 
 # Thank you!
