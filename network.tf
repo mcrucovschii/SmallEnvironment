@@ -89,9 +89,14 @@ resource "aws_subnet" "PublicSubnetLB" {
   }
 }
 resource "aws_subnet" "PrivateSubnetAppServers" {
-  vpc_id            = aws_vpc.VPC-AppServers.id
-  availability_zone = data.aws_availability_zones.available.names[0]
-  cidr_block        = cidrsubnet(aws_vpc.VPC-AppServers.cidr_block, 4, 1)
+  #vpc_id            = aws_vpc.VPC-AppServers.id
+  #availability_zone = data.aws_availability_zones.available.names[0]
+  #cidr_block        = cidrsubnet(aws_vpc.VPC-AppServers.cidr_block, 4, 1)
+  count                   = var.aws_az_count
+  vpc_id                  = aws_vpc.VPC-AppServers.id
+  cidr_block              = cidrsubnet(aws_vpc.VPC-AppServers.cidr_block, 8, count.index)
+  availability_zone       = data.aws_availability_zones.all.names[count.index]
+  map_public_ip_on_launch = true
   tags = {
     Name = "PrivateSubnetAppServers"
   }
@@ -120,7 +125,39 @@ resource "aws_subnet" "tf_test_subnet" {
 ############# Security groups #############################
 # aws_security_group.lb_sg  Load balancers (hapee and ALB)
 #
+resource "aws_security_group" "app_sg" {
+  name   = "dbnode_sg"
+  vpc_id = aws_vpc.VPC-AppServers.id
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
 
+}
 resource "aws_security_group" "dbnode_sg" {
   name   = "dbnode_sg"
   vpc_id = aws_vpc.VPC-DBNodes.id
@@ -233,6 +270,9 @@ resource "aws_security_group" "elb" {
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.VPC-LB.id
 }
+resource "aws_internet_gateway" "gw2" {
+  vpc_id = aws_vpc.VPC-AppServers.id
+}
 resource "aws_internet_gateway" "gw3" {
   vpc_id = aws_vpc.VPC-DBNodes.id
 }
@@ -252,7 +292,21 @@ resource "aws_route_table_association" "a" {
   subnet_id      = element(aws_subnet.tf_test_subnet.*.id, count.index)
   route_table_id = aws_route_table.r.id
 }
-
+resource "aws_route_table" "r2" {
+  vpc_id = aws_vpc.VPC-AppServers.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw2.id
+  }
+  tags = {
+    Name = "VPC-App-GW"
+  }
+}
+resource "aws_route_table_association" "a2" {
+  count          = var.aws_az_count
+  subnet_id      = element(aws_subnet.PrivateSubnetAppServers.*.id, count.index)
+  route_table_id = aws_route_table.r2.id
+}
 resource "aws_route_table" "r3" {
   vpc_id = aws_vpc.VPC-DBNodes.id
   route {
@@ -264,9 +318,8 @@ resource "aws_route_table" "r3" {
   }
 }
 resource "aws_route_table_association" "a3" {
-  count     = var.aws_az_count
-  subnet_id = element(aws_subnet.PrivateSubnetDBNodes.*.id, count.index)
-  #subnet_id      = aws_subnet.PrivateSubnetDBNodes.id
+  count          = var.aws_az_count
+  subnet_id      = element(aws_subnet.PrivateSubnetDBNodes.*.id, count.index)
   route_table_id = aws_route_table.r3.id
 }
 

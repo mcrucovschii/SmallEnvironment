@@ -42,10 +42,10 @@ resource "aws_instance" "web_node" {
   ami                         = data.aws_ami.fresh_amazon_linux.id
   associate_public_ip_address = true
   key_name                    = var.key_name
-  vpc_security_group_ids      = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
-  subnet_id                   = element(aws_subnet.tf_test_subnet.*.id, count.index)
-  #vpc_security_group_ids = [aws_security_group.lb_sg.id]
-  #subnet_id              = aws_subnet.PublicSubnetLB.id
+  vpc_security_group_ids      = ["${aws_security_group.app_sg.id}"]
+  subnet_id                   = element(aws_subnet.PrivateSubnetAppServers.*.id, count.index)
+  #vpc_security_group_ids      = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
+  #subnet_id                   = element(aws_subnet.tf_test_subnet.*.id, count.index)
   user_data = data.template_file.db-userdata.rendered
   tags = {
     Name = "web_node_${count.index}"
@@ -55,7 +55,8 @@ resource "aws_instance" "web_node" {
 data "template_file" "hapee-userdata" {
   template = file("hapee-userdata.sh.tpl")
   vars = {
-    serverlist = join("\n", formatlist("    server app-%v %v:80 cookie app-%v check", aws_instance.web_node.*.id, aws_instance.web_node.*.private_ip, aws_instance.web_node.*.id))
+    #serverlist = join("\n", formatlist("    server app-%v %v:80 cookie app-%v check", aws_instance.web_node.*.id, aws_instance.web_node.*.private_ip, aws_instance.web_node.*.id))
+    serverlist = join("\n", formatlist("    server app-%v %v:80 cookie app-%v check", aws_instance.web_node.*.id, aws_instance.web_node.*.public_ip, aws_instance.web_node.*.id))
   }
 }
 resource "aws_instance" "hapee_node" {
