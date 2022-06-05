@@ -62,6 +62,20 @@ resource "aws_vpc_peering_connection" "VPC2-3" {
     Name = "VPC Peering between Web nodes and DB nodes"
   }
 }
+resource "aws_vpc_peering_connection" "VPC1-3" {
+  peer_vpc_id = aws_vpc.VPC-DBNodes.id
+  vpc_id      = aws_vpc.VPC-LB.id
+  auto_accept = true
+  accepter {
+    allow_remote_vpc_dns_resolution = true
+  }
+  requester {
+    allow_remote_vpc_dns_resolution = true
+  }
+  tags = {
+    Name = "VPC Peering between Web nodes and DB nodes"
+  }
+}
 ################## subnet declaration #################
 resource "aws_subnet" "PublicSubnetLB" {
   #count             = var.aws_az_count
@@ -83,9 +97,10 @@ resource "aws_subnet" "PrivateSubnetAppServers" {
   }
 }
 resource "aws_subnet" "PrivateSubnetDBNodes" {
-  vpc_id            = aws_vpc.VPC-DBNodes.id
-  availability_zone = data.aws_availability_zones.available.names[0]
-  cidr_block        = cidrsubnet(aws_vpc.VPC-DBNodes.cidr_block, 4, 1)
+  vpc_id                  = aws_vpc.VPC-DBNodes.id
+  availability_zone       = data.aws_availability_zones.all.names[0]
+  cidr_block              = cidrsubnet(aws_vpc.VPC-DBNodes.cidr_block, 4, 1)
+  map_public_ip_on_launch = true
   tags = {
     Name = "PrivateSubnetDBNodes"
   }
@@ -104,6 +119,33 @@ resource "aws_subnet" "tf_test_subnet" {
 ############# Security groups #############################
 # aws_security_group.lb_sg  Load balancers (hapee and ALB)
 #
+
+resource "aws_security_group" "dbnode_sg" {
+  name   = "dbnode_sg"
+  vpc_id = aws_vpc.VPC-DBNodes.id
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+}
+
 resource "aws_security_group" "lb_sg" {
   name   = "Load Balancer Security Group"
   vpc_id = aws_vpc.VPC-LB.id
@@ -146,7 +188,7 @@ resource "aws_security_group" "instance_sg1" {
     self        = true
   }
   ingress {
-    from_port   = 0
+    from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -190,7 +232,9 @@ resource "aws_security_group" "elb" {
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.VPC-LB.id
 }
-
+resource "aws_internet_gateway" "gw3" {
+  vpc_id = aws_vpc.VPC-DBNodes.id
+}
 ##################### route table declaration ############
 resource "aws_route_table" "r" {
   vpc_id = aws_vpc.VPC-LB.id
@@ -207,11 +251,21 @@ resource "aws_route_table_association" "a" {
   subnet_id      = element(aws_subnet.tf_test_subnet.*.id, count.index)
   route_table_id = aws_route_table.r.id
 }
-/*
-resource "aws_route_table_association" "a" {
-  subnet_id      = aws_subnet.PublicSubnetLB.id
-  route_table_id = aws_route_table.r.id
-}*/
+
+resource "aws_route_table" "r3" {
+  vpc_id = aws_vpc.VPC-DBNodes.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw3.id
+  }
+  tags = {
+    Name = "VPC-DB-GW"
+  }
+}
+resource "aws_route_table_association" "a3" {
+  subnet_id      = aws_subnet.PrivateSubnetDBNodes.id
+  route_table_id = aws_route_table.r3.id
+}
 
 ############## ALB ##############################
 resource "aws_lb" "hapee_alb" {

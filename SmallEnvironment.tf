@@ -18,12 +18,12 @@ resource "aws_instance" "db_node" {
   instance_type = var.instance_type
   ami           = data.aws_ami.fresh_amazon_linux.id
   # associate_public_ip_address = true
-  key_name               = var.key_name
-  vpc_security_group_ids = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
-  subnet_id              = element(aws_subnet.tf_test_subnet.*.id, count.index)
-  #vpc_security_group_ids = [aws_security_group.lb_sg.id]
-  #subnet_id              = aws_subnet.PublicSubnetLB.id
-  user_data = file("tf-db-node-script.sh")
+  key_name = var.key_name
+  #vpc_security_group_ids = ["${aws_security_group.instance_sg1.id}", "${aws_security_group.instance_sg2.id}"]
+  #subnet_id              = element(aws_subnet.tf_test_subnet.*.id, count.index)
+  vpc_security_group_ids = [aws_security_group.dbnode_sg.id]
+  subnet_id              = aws_subnet.PrivateSubnetDBNodes.id
+  user_data              = file("tf-db-node-script.sh")
   tags = {
     Name = "db_node_${count.index}"
   }
