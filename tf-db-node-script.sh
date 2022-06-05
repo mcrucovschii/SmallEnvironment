@@ -16,3 +16,6 @@ mysql -u root -p"ak^SMg4g9p5" -e "CREATE USER 'wordpress'@'%' IDENTIFIED BY 'ak^
 mysql -u root -p"ak^SMg4g9p5" -e "CREATE DATABASE wordpress;"
 mysql -u root -p"ak^SMg4g9p5" -e "GRANT ALL PRIVILEGES ON wordpress.* TO 'wordpress'@'%';"
 mysql -u root -p"ak^SMg4g9p5" -e "flush privileges;"
+wget https://raw.githubusercontent.com/mcrucovschii/SmallEnvironment/Development/wordpress.sql -O  /tmp/wordpress.sql
+sed 's#http\://ec2-34-220-15-36.us-west-2.compute.amazonaws.com##g' /tmp/wordpress.sql > /tmp/tmp.sql
+sudo mysql -uwordpress -p"ak^SMg4g9p5" wordpress < /tmp/tmp.sql

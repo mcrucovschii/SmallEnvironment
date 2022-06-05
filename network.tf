@@ -258,6 +258,7 @@ resource "aws_lb_target_group_attachment" "hapee_alb_target_att" {
   port             = 80
 }
 ############## ALB RDS ##############################
+/*
 resource "aws_lb" "db_alb" {
   name            = "db-test-alb"
   internal        = false
@@ -295,7 +296,7 @@ resource "aws_lb_listener" "db_alb_listener" {
     target_group_arn = aws_lb_target_group.db_alb_target.arn
     type             = "forward"
   }
-}*/
+}
 resource "aws_lb_target_group_attachment" "db_alb_target_att" {
   count            = var.db_nodes_count
   target_group_arn = aws_lb_target_group.db_alb_target.arn

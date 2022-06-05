@@ -29,6 +29,12 @@ resource "aws_instance" "db_node" {
   }
 }
 
+data "template_file" "db-userdata" {
+  template = file("tf-app-server-script.sh")
+  vars = {
+    dbhost = aws_instance.db_node[0].public_ip
+  }
+}
 resource "aws_instance" "web_node" {
   count                       = var.app_servers_count
   instance_type               = var.instance_type
@@ -39,7 +45,7 @@ resource "aws_instance" "web_node" {
   subnet_id                   = element(aws_subnet.tf_test_subnet.*.id, count.index)
   #vpc_security_group_ids = [aws_security_group.lb_sg.id]
   #subnet_id              = aws_subnet.PublicSubnetLB.id
-  user_data = file("tf-app-server-script.sh")
+  user_data = data.template_file.db-userdata.rendered
   tags = {
     Name = "web_node_${count.index}"
   }
