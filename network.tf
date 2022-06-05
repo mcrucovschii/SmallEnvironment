@@ -13,21 +13,21 @@
 resource "aws_default_vpc" "default" {}
 
 resource "aws_vpc" "VPC-LB" {
-  cidr_block           = "20.1.0.0/16"
+  cidr_block           = "10.101.0.0/16"
   enable_dns_hostnames = true
   tags = {
     Name = "VPC-LB"
   }
 }
 resource "aws_vpc" "VPC-AppServers" {
-  cidr_block           = "20.2.0.0/16"
+  cidr_block           = "10.102.0.0/16"
   enable_dns_hostnames = true
   tags = {
     Name = "VPC-AppServers"
   }
 }
 resource "aws_vpc" "VPC-DBNodes" {
-  cidr_block           = "20.3.0.0/16"
+  cidr_block           = "10.103.0.0/16"
   enable_dns_hostnames = true
   tags = {
     Name = "VPC-DBNodes"
@@ -145,6 +145,13 @@ resource "aws_security_group" "instance_sg1" {
     cidr_blocks = ["0.0.0.0/0"]
     self        = true
   }
+  ingress {
+    from_port   = 0
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
 }
 resource "aws_security_group" "instance_sg2" {
   name        = "instance_sg2"
@@ -208,12 +215,9 @@ resource "aws_route_table_association" "a" {
 
 ############## ALB ##############################
 resource "aws_lb" "hapee_alb" {
-  name     = "hapee-test-alb"
-  internal = false
-  subnets  = toset(aws_subnet.tf_test_subnet[*].id)
-  #[for i in aws_subnet.tf_test_subnet : aws_subnet.tf_test_subnet[i].id]
-  # ["${aws_subnet.tf_test_subnet.*.id}"] # [for i in var.allowed_ips : i.ip_address]
-  # toset(var.allowed_ips[*].ip_address)
+  name            = "hapee-test-alb"
+  internal        = false
+  subnets         = toset(aws_subnet.tf_test_subnet[*].id)
   security_groups = ["${aws_security_group.elb.id}"]
   tags = {
     Name = "hapee_alb"
@@ -253,3 +257,74 @@ resource "aws_lb_target_group_attachment" "hapee_alb_target_att" {
   target_id        = element(aws_instance.hapee_node.*.id, count.index)
   port             = 80
 }
+############## ALB RDS ##############################
+resource "aws_lb" "db_alb" {
+  name            = "db-test-alb"
+  internal        = false
+  subnets         = toset(aws_subnet.tf_test_subnet[*].id)
+  security_groups = ["${aws_security_group.elb.id}"]
+  tags = {
+    Name = "db_alb"
+  }
+}
+resource "aws_lb_target_group" "db_alb_target" {
+  name     = "db-test-alb-tg"
+  vpc_id   = aws_vpc.VPC-LB.id
+  port     = 3306
+  protocol = "TCP"
+  health_check {
+    interval = 30
+    #path                = "/haproxy_status"
+    port     = 3306
+    protocol = "TCP"
+    #timeout             = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    #matcher             = "200,202"
+  }
+  tags = {
+    Name = "hapee_alb_tg"
+  }
+}
+/*
+resource "aws_lb_listener" "db_alb_listener" {
+  load_balancer_arn = aws_lb.db_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+  default_action {
+    target_group_arn = aws_lb_target_group.db_alb_target.arn
+    type             = "forward"
+  }
+}*/
+resource "aws_lb_target_group_attachment" "db_alb_target_att" {
+  count            = var.db_nodes_count
+  target_group_arn = aws_lb_target_group.db_alb_target.arn
+  target_id        = element(aws_instance.db_node.*.id, count.index)
+  port             = 3306
+}
+######################### DNS ###############################
+/*
+resource "aws_elb" "main" {
+  name               = "foobar-terraform-elb"
+  availability_zones = ["us-east-1c"]
+
+  listener {
+    instance_port     = 80
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
+  }
+}
+
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.primary.zone_id
+  name    = "example.com"
+  type    = "A"
+
+  alias {
+    name                   = aws_elb.main.dns_name
+    zone_id                = aws_elb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+*/

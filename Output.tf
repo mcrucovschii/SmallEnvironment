@@ -61,6 +61,9 @@ output "aws_availability_zones" {
 output "HAPEE_nodes_private_IPs" {
   value = aws_instance.hapee_node.*.public_ip
 }
+output "LB_HAPEE_DNS_address" {
+  value = aws_lb.hapee_alb.dns_name
+}
 
 output "Web_node_private_IPs" {
   value = aws_instance.web_node.*.public_ip
@@ -69,7 +72,6 @@ output "Web_node_private_IPs" {
 output "Db_node_public_IPs" {
   value = aws_instance.db_node.*.public_ip
 }
-
-output "LB_DNS_address" {
-  value = aws_lb.hapee_alb.dns_name
+output "Db_node_private_IPs" {
+  value = aws_instance.db_node.*.private_ip
 }

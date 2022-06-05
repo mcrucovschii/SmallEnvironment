@@ -7,8 +7,7 @@ sudo amazon-linux-extras enable php7.4
 sudo amazon-linux-extras install -y php7.4
 sudo wget https://wordpress.org/latest.tar.gz
 sudo tar xvzf latest.tar.gz -C /var/www/html
-sudo cd /var/www/
-sudo chown -R apache:apache html
+sudo chown -R apache:apache /var/www/html
 sudo chkconfig httpd on
 #sudo systemctl enable httpd
 sudo systemctl restart httpd
