@@ -90,12 +90,13 @@ resource "aws_vpc_peering_connection" "VPC1-3" {
 }
 ################## subnet declaration #################
 resource "aws_subnet" "PublicSubnetLB" {
-  #count             = var.aws_az_count
-  vpc_id            = aws_vpc.VPC-LB.id
-  cidr_block        = cidrsubnet(aws_vpc.VPC-LB.cidr_block, 4, 1)
-  availability_zone = data.aws_availability_zones.available.names[0]
-  #availability_zone       = data.aws_availability_zones.available.names[count.index]
-  #map_public_ip_on_launch = true
+  count  = var.aws_az_count
+  vpc_id = aws_vpc.VPC-LB.id
+  #cidr_block        = cidrsubnet(aws_vpc.VPC-LB.cidr_block, 4, 1)
+  #availability_zone = data.aws_availability_zones.available.names[0]
+  cidr_block              = cidrsubnet(aws_vpc.VPC-LB.cidr_block, 8, count.index)
+  availability_zone       = data.aws_availability_zones.all.names[count.index]
+  map_public_ip_on_launch = true
   tags = {
     Name = "PublicSubnetLB"
   }
@@ -120,6 +121,7 @@ resource "aws_subnet" "PrivateSubnetDBNodes" {
     Name = "PrivateSubnetDBNodes"
   }
 }
+/*
 resource "aws_subnet" "tf_test_subnet" {
   count                   = var.aws_az_count
   vpc_id                  = aws_vpc.VPC-LB.id
@@ -130,7 +132,7 @@ resource "aws_subnet" "tf_test_subnet" {
     Name = "hapee_test_subnet"
   }
 }
-
+*/
 ############# Security groups #############################
 # aws_security_group.lb_sg  Load balancers (hapee and ALB)
 #
@@ -297,7 +299,7 @@ resource "aws_route_table" "r" {
 }
 resource "aws_route_table_association" "a" {
   count          = var.aws_az_count
-  subnet_id      = element(aws_subnet.tf_test_subnet.*.id, count.index)
+  subnet_id      = element(aws_subnet.PublicSubnetLB.*.id, count.index)
   route_table_id = aws_route_table.r.id
 }
 resource "aws_route_table" "r2" {
@@ -335,7 +337,7 @@ resource "aws_route_table_association" "a3" {
 resource "aws_lb" "hapee_alb" {
   name            = "hapee-test-alb"
   internal        = false
-  subnets         = toset(aws_subnet.tf_test_subnet[*].id)
+  subnets         = toset(aws_subnet.PublicSubnetLB[*].id)
   security_groups = ["${aws_security_group.elb.id}"]
   tags = {
     Name = "hapee_alb"

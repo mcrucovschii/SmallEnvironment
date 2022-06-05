@@ -61,8 +61,9 @@ resource "aws_instance" "hapee_node" {
   associate_public_ip_address = true
   key_name                    = var.key_name
   vpc_security_group_ids      = ["${aws_security_group.lb_sg.id}"]
-  subnet_id                   = aws_subnet.tf_test_subnet[count.index].id
-  user_data                   = data.template_file.hapee-userdata.rendered
+  #subnet_id                   = aws_subnet.tf_test_subnet[count.index].id
+  subnet_id = element(aws_subnet.PublicSubnetLB.*.id, count.index)
+  user_data = data.template_file.hapee-userdata.rendered
   tags = {
     Name = "hapee_node_${count.index}"
   }
