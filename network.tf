@@ -6,6 +6,8 @@
 # 3 DB-Nodes (default AWS AMI)
 # 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
 #
+# Here VPS, Peering, Subnets, Secirite groups and AWS Load Balancer are defined
+#
 # SmallEnvironment.tf
 #----------------------------------------------
 
@@ -121,19 +123,7 @@ resource "aws_subnet" "PrivateSubnetDBNodes" {
     Name = "PrivateSubnetDBNodes"
   }
 }
-/*
-resource "aws_subnet" "tf_test_subnet" {
-  count                   = var.aws_az_count
-  vpc_id                  = aws_vpc.VPC-LB.id
-  cidr_block              = cidrsubnet(aws_vpc.VPC-LB.cidr_block, 8, count.index)
-  availability_zone       = data.aws_availability_zones.all.names[count.index]
-  map_public_ip_on_launch = true
-  tags = {
-    Name = "hapee_test_subnet"
-  }
-}
-*/
-############# Security groups #############################
+######### Security groups #############################
 # aws_security_group.lb_sg  Load balancers (hapee and ALB)
 #
 resource "aws_security_group" "app_sg" {
@@ -210,50 +200,7 @@ resource "aws_security_group" "lb_sg" {
     Name = "LB_SG"
   }
 }
-/*
-resource "aws_security_group" "instance_sg1" {
-  name        = "instance_sg1"
-  description = "Instance (HAProxy/App node) SG to pass tcp/22 by default"
-  vpc_id      = aws_vpc.VPC-LB.id # aws_vpc.VPC-AppServers.id
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    self        = true
-  }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    self        = true
-  }
-  ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    self        = true
-  }
-}
-resource "aws_security_group" "instance_sg2" {
-  name        = "instance_sg2"
-  description = "Instance (HAProxy/App node) SG to pass LB traffic  by default"
-  vpc_id      = aws_vpc.VPC-LB.id # aws_vpc.VPC-AppServers.id
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}*/
+
 resource "aws_security_group" "elb" {
   name   = "elb_sg"
   vpc_id = aws_vpc.VPC-LB.id
