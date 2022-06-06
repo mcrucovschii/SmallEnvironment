@@ -1,15 +1,12 @@
-#-----------------------------------------------
+#--------------------------------------------------------------------------------------
 # Example of a small environment
 #
-# 2 LBs (Custom Hardened Linux AMI)
-# 2 Application-Server (default AWS AMI)
-# 3 DB-Nodes (default AWS AMI)
-# 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
+# 3 VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
 #
-# Here VPS, Peering, Subnets, Secirite groups and AWS Load Balancer are defined
+# VPCs, VPCs' Peering, Subnets, Securite groups and Load Balancers
 #
 # SmallEnvironment.tf
-#----------------------------------------------
+#--------------------------------------------------------------------------------------
 
 ########### VPCs declaration ###################
 resource "aws_default_vpc" "default" {}
@@ -50,18 +47,6 @@ resource "aws_vpc_peering_connection" "VPC1-2" {
     Name = "VPC Peering between Load Balancers and Web nodes"
   }
 }
-/*
-resource "aws_vpc_peering_connection_options" "foo" {
-  vpc_peering_connection_id = aws_vpc_peering_connection.VPC1-2.id
-  accepter {
-    allow_remote_vpc_dns_resolution = true
-  }
-
-  requester {
-    allow_vpc_to_remote_classic_link = true
-    allow_classic_link_to_remote_vpc = true
-  }
-}*/
 resource "aws_vpc_peering_connection" "VPC2-3" {
   peer_vpc_id = aws_vpc.VPC-AppServers.id
   vpc_id      = aws_vpc.VPC-DBNodes.id
@@ -124,24 +109,22 @@ resource "aws_subnet" "PrivateSubnetDBNodes" {
   }
 }
 ######### Security groups #############################
-# aws_security_group.lb_sg  Load balancers (hapee and ALB)
+# aws_security_group.app_sg  App servers (web node)
+# aws_security_group.lb_sg  Load balancers (hapee)
+# aws_security_group.dbnode_sg DB Nodes
 #
+
 resource "aws_security_group" "app_sg" {
-  name   = "dbnode_sg"
+  name   = "app_sg"
   vpc_id = aws_vpc.VPC-AppServers.id
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    self        = true
-  }
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    self        = true
+  dynamic "ingress" {
+    for_each = var.app_allowed_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
   egress {
     from_port   = 0
@@ -150,17 +133,21 @@ resource "aws_security_group" "app_sg" {
     cidr_blocks = ["0.0.0.0/0"]
     self        = true
   }
-
+  tags = {
+    Name = "APP_SG"
+  }
 }
 resource "aws_security_group" "dbnode_sg" {
   name   = "dbnode_sg"
   vpc_id = aws_vpc.VPC-DBNodes.id
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    self        = true
+  dynamic "ingress" {
+    for_each = var.db_allowed_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
   egress {
     from_port   = 0
@@ -175,6 +162,9 @@ resource "aws_security_group" "dbnode_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
     self        = true
+  }
+  tags = {
+    Name = "DB_SG"
   }
 }
 
@@ -224,6 +214,9 @@ resource "aws_security_group" "elb" {
   }
 }
 ##################### gateway declaration ###############
+# gw ---> VPC1
+# gw2 ---> VPC2
+# gw3 ---> VPC3
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.VPC-LB.id
 }
@@ -233,15 +226,23 @@ resource "aws_internet_gateway" "gw2" {
 resource "aws_internet_gateway" "gw3" {
   vpc_id = aws_vpc.VPC-DBNodes.id
 }
-##################### route table declaration ############
+##################### route table declaration ##################
+# aws_route_table.r & aws_route_table_association.a --> VPC1
+# aws_route_table.r2 & aws_route_table_association.a2 --> VPC2
+# aws_route_table. r3 & aws_route_table_association.a3 --> VPC3
+#
 resource "aws_route_table" "r" {
   vpc_id = aws_vpc.VPC-LB.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gw.id
   }
+  route {
+    cidr_block = aws_vpc.VPC-AppServers.cidr_block
+    gateway_id = aws_vpc_peering_connection.VPC1-2.id
+  }
   tags = {
-    Name = "VPC-LB-GW"
+    Name = "VPC-LB-RT"
   }
 }
 resource "aws_route_table_association" "a" {
@@ -255,8 +256,16 @@ resource "aws_route_table" "r2" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gw2.id
   }
+  route {
+    cidr_block = aws_vpc.VPC-LB.cidr_block
+    gateway_id = aws_vpc_peering_connection.VPC1-2.id
+  }
+  route {
+    cidr_block = aws_vpc.VPC-DBNodes.cidr_block
+    gateway_id = aws_vpc_peering_connection.VPC2-3.id
+  }
   tags = {
-    Name = "VPC-App-GW"
+    Name = "VPC-App-RT"
   }
 }
 resource "aws_route_table_association" "a2" {
@@ -270,8 +279,12 @@ resource "aws_route_table" "r3" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gw3.id
   }
+  route {
+    cidr_block = aws_vpc.VPC-AppServers.cidr_block
+    gateway_id = aws_vpc_peering_connection.VPC2-3.id
+  }
   tags = {
-    Name = "VPC-DB-GW"
+    Name = "VPC-DB-RT"
   }
 }
 resource "aws_route_table_association" "a3" {
@@ -280,7 +293,7 @@ resource "aws_route_table_association" "a3" {
   route_table_id = aws_route_table.r3.id
 }
 
-############## ALB ##############################
+############## ALB ##### HAPEE ########################
 resource "aws_lb" "hapee_alb" {
   name            = "hapee-test-alb"
   internal        = false
@@ -324,7 +337,7 @@ resource "aws_lb_target_group_attachment" "hapee_alb_target_att" {
   target_id        = element(aws_instance.hapee_node.*.id, count.index)
   port             = 80
 }
-######################### DNS ###############################
+######################### Route 53 ###############################
 /*
 resource "aws_elb" "main" {
   name               = "foobar-terraform-elb"
