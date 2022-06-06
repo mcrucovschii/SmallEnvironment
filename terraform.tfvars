@@ -6,10 +6,13 @@
 # 3 DB-Nodes (default AWS AMI)
 # 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
 #
+#  Please, customese setup here
+#
 # terraform.tfvars
 #----------------------------------------------
 
-region            = "us-west-2"
+#region            = "us-west-2"     # dev zone
+region            = "eu-central-1" # prod zone
 instance_type     = "t2.micro"
 lb_allowed_ports  = ["22", "80"]
 app_allowed_ports = ["22", "80", "8080", "443"]
