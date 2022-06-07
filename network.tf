@@ -351,15 +351,22 @@ resource "aws_elb" "main" {
   }
 }
 
-resource "aws_route53_record" "www" {
-  zone_id = aws_route53_zone.primary.zone_id
-  name    = "example.com"
-  type    = "A"
+resource "aws_route53_zone" "example" {
+  name = "test.example.com"
+}
 
-  alias {
-    name                   = aws_elb.main.dns_name
-    zone_id                = aws_elb.main.zone_id
-    evaluate_target_health = true
-  }
+resource "aws_route53_record" "example" {
+  allow_overwrite = true
+  name            = "test.example.com"
+  ttl             = 172800
+  type            = "NS"
+  zone_id         = aws_route53_zone.example.zone_id
+
+  records = [
+    aws_route53_zone.example.name_servers[0],
+    aws_route53_zone.example.name_servers[1],
+    aws_route53_zone.example.name_servers[2],
+    aws_route53_zone.example.name_servers[3],
+  ]
 }
 */
