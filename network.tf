@@ -61,6 +61,7 @@ resource "aws_vpc_peering_connection" "VPC2-3" {
     Name = "VPC Peering between Web nodes and DB nodes"
   }
 }
+/*
 resource "aws_vpc_peering_connection" "VPC1-3" {
   peer_vpc_id = aws_vpc.VPC-DBNodes.id
   vpc_id      = aws_vpc.VPC-LB.id
@@ -74,7 +75,7 @@ resource "aws_vpc_peering_connection" "VPC1-3" {
   tags = {
     Name = "VPC Peering between LB and DB nodes"
   }
-}
+}*/
 ################## subnet declaration #################
 resource "aws_subnet" "PublicSubnetLB" {
   count  = var.aws_az_count
