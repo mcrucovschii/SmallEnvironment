@@ -132,7 +132,6 @@ resource "aws_security_group" "app_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-    self        = true
   }
   tags = {
     Name = "APP_SG"
@@ -155,14 +154,12 @@ resource "aws_security_group" "dbnode_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-    self        = true
   }
   ingress {
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    self        = true
   }
   tags = {
     Name = "DB_SG"
