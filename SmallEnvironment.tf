@@ -1,22 +1,16 @@
 #-----------------------------------------------
-# Example of a small environment
+# Example of a Small Environment
 #
 # 2 LBs (Custom Hardened Linux AMI)
 # 2 Application-Server (default AWS AMI)
 # 3 DB-Nodes (default AWS AMI)
-# 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
-#
-# 1) How can this be put into a GitHub Action Pipeline to get applied when merged?
-# 2) Is there any other way to maybe integrate it into our AWX(Ansible Tower) infrastructure to Reflect a IaaC Approach?
-# What could be the best way to distribute Traffic over 2 LBs or would you prefer Active/Passive?
-# 3) How can this be done without any interaction?
-# 4) present the examples and you thoughts about the Challanges and mind-gaps in this Request?
+# 3  VPCs/Networks & Sec-Groups to isolate DB from Applications from Public-Access (LB)
 #
 # SmallEnvironment.tf
 #----------------------------------------------
-#########   instances  - db, app, hapee #######
+#########   instances' declaration - db, app, hapee #######
 #
-########### declaration of db node instance
+########### db node instance
 resource "aws_instance" "db_node" {
   count                  = var.db_nodes_count
   instance_type          = var.instance_type
@@ -30,7 +24,7 @@ resource "aws_instance" "db_node" {
   }
 }
 
-########### declaration of app server (web node) instance
+########### app server (web node) instance
 data "template_file" "db-userdata" {
   template = file("tf-app-server-script.sh")
   vars = {
@@ -52,7 +46,7 @@ resource "aws_instance" "web_node" {
   }
 }
 
-########### declaration of load balancer (hapee node) instance
+########### load balancer (hapee node) instance
 data "template_file" "hapee-userdata" {
   template = file("hapee-userdata.sh.tpl")
   vars = {

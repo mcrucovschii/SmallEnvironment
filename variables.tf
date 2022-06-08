@@ -4,7 +4,7 @@
 # 2 LBs (Custom Hardened Linux AMI)
 # 2 Application-Server (default AWS AMI)
 # 3 DB-Nodes (default AWS AMI)
-# 3  VPCs/Networks & Sec-Groups to Isolate Application from DB from Public-Access to LB
+# 3  VPCs/Networks & Sec-Groups to isolate DB from Applications from Public-Access (LB)
 #
 # variables.tf
 # region - region where infrastructure will be deployed
