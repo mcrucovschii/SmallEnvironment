@@ -9,3 +9,6 @@
 *.pem
 *.ppk
 *.pub
+
+#Presentation
+*.pptx
