@@ -1,20 +1,20 @@
-# Example of a small environment
+```diff
+# Example of a small environment deployment
 
-# Enter your AWS credentials
++# Enter your AWS credentials
 export AWS_ACCESS_KEY_ID=""\
 export AWS_SECRET_ACCESS_KEY=""
 
-# Init
++# Init
 terraform init
 
-#Configure
++#Configure
 #terraform.tfvars
 
-
-# Deploy
++# Deploy
 terraform apply --auto-approve
 
-# Destroy
++# Destroy
 terraform destroy --auto-approve
 
 # Thank you!
